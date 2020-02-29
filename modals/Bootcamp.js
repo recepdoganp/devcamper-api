@@ -100,6 +100,12 @@ const BootcampSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now
+    },
+    // integrating user modal and bootcamp modal
+    user: {
+      type: mongoose.Schema.ObjectId, //needed in order to reference the related User by Id
+      ref: "User", // needed in order to identify which modal to refer to for ID matching,
+      required: true
     }
   },
   {
@@ -142,6 +148,7 @@ BootcampSchema.pre("save", async function(next) {
 BootcampSchema.pre("remove", async function(next) {
   console.log(`Courses being removed from bootcamp ${this._id}`);
   await this.model("Course").deleteMany({ bootcamp: this._id });
+  await this.model("Review").deleteMany({ bootcamp: this._id });
   next();
 });
 

@@ -8,25 +8,18 @@ const Bootcamp = require("../modals/Bootcamp");
 // @route   GET /api/v1/bootcamps/:bootcampId/courses
 // @access  Public
 exports.getCourses = asyncHandler(async (req, res, next) => {
-  let query;
-
   if (req.params.bootcampId) {
     // if there is specific bootcamp in the query then find courses belonging to it
-    query = Course.find({ bootcamp: req.params.bootcampId });
+    const courses = await Course.find({ bootcamp: req.params.bootcampId });
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      data: courses
+    });
   } else {
     // if not passed in a bootcampId then getch all courses in database, and populate bootcamp info referring to modal name
-    query = Course.find().populate({
-      path: "bootcamp", // name of thhe property we would like to populate with using its ID info
-      select: "name description" // the fields we would like to include in our response
-    });
+    res.status(200).json(res.advancedResults);
   }
-
-  const courses = await query;
-  res.status(200).json({
-    success: true,
-    count: courses.length,
-    data: courses
-  });
 });
 
 // @desc    Get a single course
@@ -57,11 +50,24 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
   // we have to assign bootcamp field of the courses using the parameter passed in the url
   req.body.bootcamp = req.params.bootcampId;
 
+  req.body.user = req.user.id;
+
   const bootcamp = await Bootcamp.findById(req.params.bootcampId);
 
   if (!bootcamp) {
     return next(
       new ErrorResponse(`No bootcamp with id of ${req.params.bootcampId}`, 404)
+    );
+  }
+
+  // make sure user is bootcamp owner
+  if (bootcamp.user.toString() !== req.user.id && req.user.role !== "admin") {
+    console.log("ot exitsigint");
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized to add a course to ${bootcamp._id}`,
+        401
+      )
     );
   }
 
@@ -85,6 +91,17 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // make sure user is course owner
+  if (course.user.toString() !== req.user.id && req.user.role !== "admin") {
+    console.log("ot exitsigint");
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized to update the course ${course._id}`,
+        401
+      )
+    );
+  }
+
   course = await Course.findByIdAndUpdate(req.params.id, req.body, {
     new: true, //returns the new version of the course
     runValidators: true
@@ -105,6 +122,17 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
   if (!course) {
     return next(
       new ErrorResponse(`No course with id of ${req.params.id}`, 404)
+    );
+  }
+
+  // make sure user is course owner
+  if (course.user.toString() !== req.user.id && req.user.role !== "admin") {
+    console.log("ot exitsigint");
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized to delete the course ${course._id}`,
+        401
+      )
     );
   }
 

@@ -5,22 +5,22 @@ const errorHandler = (err, req, res, next) => {
   error.message = err.message;
 
   // log to console for Dev
-  console.log(err);
+  // console.log(err);
 
   // Mongoose bad objectId
   if (err.name === "CastError") {
-    const message = `Resource not found with id of ${err.value}`;
+    const message = `Resource not found`;
     error = new ErrorResponse(message, 404);
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const dupField = Object.keys(err).find(
-      key => err.keyValue[key] === err.keyValue.name
+    const dupField = Object.keys(err.keyValue).find(
+      key => key === "name" || "email"
     );
 
     // const message= `Duplicate field value entered`;
-    const message = `Duplicate field entered, the same ${dupField}: '${err.keyValue.name}' already exists`;
+    const message = `Duplicate field value entered`;
     error = new ErrorResponse(message, 400);
   }
 
